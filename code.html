@@ -914,3 +914,23 @@
     </script>
 </body>
 </html>
+function syncToGoogleSheets() {
+  fetch("https://script.google.com/macros/s/AKfycbxDCMGmmroMRfwLQVRYEZ01LzkwJAs2pi0VXZ2QyiEZOzD_5Y5JG0-75UqTZOaRAcodjA/exec", {
+    method: 'POST',
+    body: JSON.stringify(inventory),
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(res => res.text())
+  .then(data => {
+    alert("Synced to Google Sheets: " + data);
+  })
+  .catch(err => {
+    alert("Failed to sync: " + err.message);
+  });
+}
+
+<button onclick="syncToGoogleSheets()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md">
+  <i class="fas fa-cloud-upload-alt mr-1"></i> Sync to Google Sheets
+</button>
