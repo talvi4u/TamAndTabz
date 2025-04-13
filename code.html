@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T-Shirt Inventory System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .low-stock {
+            background-color: #fee2e2 !important;
+            color: #dc2626 !important;
+            font-weight: bold;
+        }
+        .print-only {
+            display: none;
+        }
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            body {
+                padding: 0;
+                margin: 0;
+                font-size: 12pt;
+            }
+            .inventory-table th, .inventory-table td {
+                padding: 4px !important;
+                font-size: 10pt !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 flex items-center">
+                <i class="fas fa-tshirt mr-3 text-blue-500"></i>
+                T-Shirt Inventory System
+            </h1>
+            <p class="text-gray-600 mt-2">Manage your t-shirt stock levels efficiently</p>
+        </header>
+
+        <div class="bg-white rounded-lg shadow-md overflow-hidden mb-8">
+            <div class="border-b border-gray-200">
+                <nav class="flex no-print">
+                    <button id="inventory-tab" class="px-4 py-3 font-medium text-blue-600 border-b-2 border-blue-600 bg-blue-50">Inventory</button>
+                    <button id="restock-tab" class="px-4 py-3 font-medium text-gray-500 hover:text-blue-600">Restock Log</button>
+                    <button id="reports-tab" class="px-4 py-3 font-medium text-gray-500 hover:text-blue-600">Reports</button>
+                </nav>
+            </div>
+
+            <!-- Inventory Tab -->
+            <div id="inventory-content" class="p-6">
+                <div class="flex justify-between items-center mb-6 no-print">
+                    <div>
+                        <button id="add-design" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md mr-3">
+                            <i class="fas fa-plus mr-1"></i> Add Design
+                        </button>
+                        <button id="export-inventory" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md">
+                            <i class="fas fa-file-export mr-1"></i> Export Inventory
+                        </button>
+                    </div>
+                    <button id="print-inventory" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-md">
+                        <i class="fas fa-print mr-1"></i> Print
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200 inventory-table">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Design</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">XS</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">S</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">M</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">L</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">XL</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">XXL</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">3XL</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Restock</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider no-print">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-body" class="bg-white divide-y divide-gray-200">
+                            <!-- Inventory rows will be added here by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Restock Log Tab -->
+            <div id="restock-content" class="p-6 hidden">
+                <div class="flex justify-between items-center mb-6 no-print">
+                    <h2 class="text-xl font-semibold text-gray-800">Restock History</h2>
+                    <button id="export-restock" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md">
+                        <i class="fas fa-file-export mr-1"></i> Export Log
+                    </button>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Design</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity Added</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">New Stock</th>
+                            </tr>
+                        </thead>
+                        <tbody id="restock-body" class="bg-white divide-y divide-gray-200">
+                            <!-- Restock logs will be added here by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Reports Tab -->
+            <div id="reports-content" class="p-6 hidden">
+                <div class="mb-8 no-print">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Generate Reports</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <h3 class="text-lg font-medium text-gray-800 mb-4">Monthly Report</h3>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Select Month</label>
+                                <input type="month" id="report-month" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            </div>
+                            <button id="generate-monthly" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                                <i class="fas fa-chart-bar mr-1"></i> Generate Report
+                            </button>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                            <h3 class="text-lg font-medium text-gray-800 mb-4">Custom Date Range</h3>
+                            <div class="mb-4">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                                <input type="date" id="report-start" class="w-full px-3 py-2 border border-gray-300 rounded-md mb-3">
+                                
+                                <label class="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                                <input type="date" id="report-end" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                            </div>
+                            <button id="generate-custom" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                                <i class="fas fa-chart-line mr-1"></i> Generate Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="report-results" class="hidden">
+                    <div class="flex justify-between items-center mb-4 no-print">
+                        <h3 id="report-title" class="text-lg font-semibold text-gray-800"></h3>
+                        <button id="export-report" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md">
+                            <i class="fas fa-file-export mr-1"></i> Export Report
+                        </button>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr id="report-headers">
+                                    <!-- Headers will be added by JavaScript -->
+                                </tr>
+                            </thead>
+                            <tbody id="report-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Report data will be added here by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Design Modal -->
+    <div id="add-design-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-800">Add New Design</h3>
+            </div>
+            <div class="p-6">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Design Name</label>
+                    <input type="text" id="design-name" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">SKU</label>
+                    <input type="text" id="design-sku" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Initial Stock</label>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">XS</label>
+                            <input type="number" min="0" class="size-input w-full px-3 py-2 border border-gray-300 rounded-md" data-size="xs">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">S</label>
+                            <input type="number" min="0" class="size-input w-full px-3 py-2 border border-gray-300 rounded-md" data-size="s">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">M</label>
+                            <input type="number" min="0" class="size-input w-full px-3 py-2 border border-gray-300 rounded-md" data-size="m">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">L</label>
+                            <input type="number" min="0" class="size-input w-full px-3 py-2 border border-gray-300 rounded-md" data-size="l">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">XL</label>
+                            <input type="number" min="0" class="size-input w-full px-3 py-2 border border-gray-300 rounded-md" data-size="xl">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">XXL</label>
+                            <input type="number" min="0" class="size-input w-full px-3 py-2 border border-gray-300 rounded-md" data-size="xxl">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">3XL</label>
+                            <input type="number" min="0" class="size-input w-full px-3 py-2 border border-gray-300 rounded-md" data-size="3xl">
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Minimum Stock Levels</label>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">XS</label>
+                            <input type="number" min="0" class="min-input w-full px-3 py-2 border border-gray-300 rounded-md" data-size="xs">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">S</label>
+                            <input type="number" min="0" class="min-input w-full px-3 py-2 border border-gray-300 rounded-md" data-size="s">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">M</label>
+                            <input type="number" min="0" class="min-input w-full px-3 py-2 border border-gray-300 rounded-md" data-size="m">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">L</label>
+                            <input type="number" min="0" class="min-input w-full px-3 py-2 border border-gray-300 rounded-md" data-size="l">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">XL</label>
+                            <input type="number" min="0" class="min-input w-full px-3 py-2 border border-gray-300 rounded-md" data-size="xl">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">XXL</label>
+                            <input type="number" min="0" class="min-input w-full px-3 py-2 border border-gray-300 rounded-md" data-size="xxl">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-500 mb-1">3XL</label>
+                            <input type="number" min="0" class="min-input w-full px-3 py-2 border border-gray-300 rounded-md" data-size="3xl">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
+                <button id="cancel-add" class="px-4 py-2 text-gray-600 hover:text-gray-800 mr-2">Cancel</button>
+                <button id="confirm-add" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Add Design</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Minimum Stock Modal -->
+    <div id="edit-min-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-800">Edit Minimum Stock Levels</h3>
+                <p id="min-design-name" class="text-sm text-gray-500 mt-1"></p>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">XS</label>
+                        <input type="number" min="0" id="min-xs" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">S</label>
+                        <input type="number" min="0" id="min-s" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">M</label>
+                        <input type="number" min="0" id="min-m" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">L</label>
+                        <input type="number" min="0" id="min-l" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">XL</label>
+                        <input type="number" min="0" id="min-xl" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">XXL</label>
+                        <input type="number" min="0" id="min-xxl" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-500 mb-1">3XL</label>
+                        <input type="number" min="0" id="min-3xl" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+                    </div>
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-gray-200 flex justify-end">
+                <button id="cancel-min" class="px-4 py-2 text-gray-600 hover:text-gray-800 mr-2">Cancel</button>
+                <button id="save-min" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data structure
+        let inventory = [
+            {
+                id: 1,
+                name: "Summer Vibes",
+                sku: "TS-SV-001",
+                stock: { xs: 5, s: 10, m: 15, l: 12, xl: 8, xxl: 5, "3xl": 2 },
+                minStock: { xs: 3, s: 5, m: 5, l: 5, xl: 3, xxl: 2, "3xl": 1 },
+                lastRestock: "2023-06-15"
+            },
+            {
+                id: 2,
+                name: "Urban Explorer",
+                sku: "TS-UE-002",
+                stock: { xs: 2, s: 8, m: 20, l: 18, xl: 10, xxl: 6, "3xl": 3 },
+                minStock: { xs: 0, s: 2, m: 5, l: 5, xl: 3, xxl: 2, "3xl": 1 },
+                lastRestock: "2023-06-10"
+            }
+        ];
+
+        let restockLog = [
+            { id: 1, designId: 1, designName: "Summer Vibes", sku: "TS-SV-001", size: "m", quantity: 5, date: "2023-06-15T14:30:00", newStock: 15 },
+            { id: 2, designId: 1, designName: "Summer Vibes", sku: "TS-SV-001", size: "l", quantity: 3, date: "2023-06-15T14:30:00", newStock: 12 },
+            { id: 3, designId: 2, designName: "Urban Explorer", sku: "TS-UE-002", size: "s", quantity: 4, date: "2023-06-10T10:15:00", newStock: 8 },
+            { id: 4, designId: 2, designName: "Urban Explorer", sku: "TS-UE-002", size: "m", quantity: 10, date: "2023-06-10T10:15:00", newStock: 20 }
+        ];
+
+        // DOM Elements
+        const inventoryBody = document.getElementById('inventory-body');
+        const restockBody = document.getElementById('restock-body');
+        const reportBody = document.getElementById('report-body');
+        const reportHeaders = document.getElementById('report-headers');
+        const reportTitle = document.getElementById('report-title');
+        const reportResults = document.getElementById('report-results');
+        
+        // Tab elements
+        const inventoryTab = document.getElementById('inventory-tab');
+        const restockTab = document.getElementById('restock-tab');
+        const reportsTab = document.getElementById('reports-tab');
+        const inventoryContent = document.getElementById('inventory-content');
+        const restockContent = document.getElementById('restock-content');
+        const reportsContent = document.getElementById('reports-content');
+        
+        // Modal elements
+        const addDesignModal = document.getElementById('add-design-modal');
+        const editMinModal = document.getElementById('edit-min-modal');
+        
+        // Buttons
+        const addDesignBtn = document.getElementById('add-design');
+        const exportInventoryBtn = document.getElementById('export-inventory');
+        const exportRestockBtn = document.getElementById('export-restock');
+        const exportReportBtn = document.getElementById('export-report');
+        const printInventoryBtn = document.getElementById('print-inventory');
+        const generateMonthlyBtn = document.getElementById('generate-monthly');
+        const generateCustomBtn = document.getElementById('generate-custom');
+        
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', () => {
+            renderInventory();
+            renderRestockLog();
+            
+            // Set up tab switching
+            inventoryTab.addEventListener('click', () => switchTab('inventory'));
+            restockTab.addEventListener('click', () => switchTab('restock'));
+            reportsTab.addEventListener('click', () => switchTab('reports'));
+            
+            // Set up buttons
+            addDesignBtn.addEventListener('click', showAddDesignModal);
+            exportInventoryBtn.addEventListener('click', exportInventoryToCSV);
+            exportRestockBtn.addEventListener('click', exportRestockToCSV);
+            exportReportBtn.addEventListener('click', exportReportToCSV);
+            printInventoryBtn.addEventListener('click', printInventory);
+            generateMonthlyBtn.addEventListener('click', generateMonthlyReport);
+            generateCustomBtn.addEventListener('click', generateCustomReport);
+            
+            // Set up modal buttons
+            document.getElementById('cancel-add').addEventListener('click', () => addDesignModal.classList.add('hidden'));
+            document.getElementById('confirm-add').addEventListener('click', addNewDesign);
+            document.getElementById('cancel-min').addEventListener('click', () => editMinModal.classList.add('hidden'));
+            document.getElementById('save-min').addEventListener('click', saveMinStock);
+        });
+
+        // Render inventory table
+        function renderInventory() {
+            inventoryBody.innerHTML = '';
+            
+            inventory.forEach(item => {
+                const total = Object.values(item.stock).reduce((sum, qty) => sum + qty, 0);
+                
+                const row = document.createElement('tr');
+                row.dataset.id = item.id;
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">${item.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-500">${item.sku}</td>
+                    ${renderSizeCells(item)}
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-500">${item.lastRestock}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-900 font-medium">${total}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium no-print">
+                        <button class="edit-min text-blue-600 hover:text-blue-900 mr-3" data-id="${item.id}">Edit Min</button>
+                        <button class="delete-design text-red-600 hover:text-red-900" data-id="${item.id}">Delete</button>
+                    </td>
+                `;
+                
+                inventoryBody.appendChild(row);
+            });
+            
+            // Add event listeners to size inputs
+            document.querySelectorAll('.stock-input').forEach(input => {
+                input.addEventListener('change', updateStock);
+            });
+            
+            // Add event listeners to edit min buttons
+            document.querySelectorAll('.edit-min').forEach(btn => {
+                btn.addEventListener('click', showEditMinModal);
+            });
+            
+            // Add event listeners to delete buttons
+            document.querySelectorAll('.delete-design').forEach(btn => {
+                btn.addEventListener('click', deleteDesign);
+            });
+        }
+        
+        // Render size cells with editable inputs
+        function renderSizeCells(item) {
+            const sizes = ['xs', 's', 'm', 'l', 'xl', 'xxl', '3xl'];
+            let cells = '';
+            
+            sizes.forEach(size => {
+                const stock = item.stock[size] || 0;
+                const minStock = item.minStock[size] || 0;
+                const isLowStock = stock < minStock;
+                
+                cells += `
+                    <td class="px-6 py-4 whitespace-nowrap ${isLowStock ? 'low-stock' : ''}">
+                        <input type="number" min="0" 
+                            class="stock-input w-16 px-2 py-1 border rounded text-center ${isLowStock ? 'border-red-300' : 'border-gray-300'}" 
+                            value="${stock}" 
+                            data-id="${item.id}" 
+                            data-size="${size}">
+                    </td>
+                `;
+            });
+            
+            return cells;
+        }
+        
+        // Render restock log
+        function renderRestockLog() {
+            restockBody.innerHTML = '';
+            
+            // Sort by date (newest first)
+            const sortedLog = [...restockLog].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            sortedLog.forEach(log => {
+                const date = new Date(log.date);
+                const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-500">${formattedDate}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-900">${log.designName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-500">${log.sku}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-500">${log.size.toUpperCase()}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-green-600 font-medium">+${log.quantity}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-900">${log.newStock}</td>
+                `;
+                
+                restockBody.appendChild(row);
+            });
+        }
+        
+        // Update stock when input changes
+        function updateStock(e) {
+            const input = e.target;
+            const designId = parseInt(input.dataset.id);
+            const size = input.dataset.size;
+            const newValue = parseInt(input.value) || 0;
+            const oldValue = inventory.find(item => item.id === designId).stock[size];
+            
+            // Find the design in inventory
+            const design = inventory.find(item => item.id === designId);
+            
+            // If the new value is greater than old value, it's a restock
+            if (newValue > oldValue) {
+                const quantityAdded = newValue - oldValue;
+                const now = new Date().toISOString();
+                
+                // Add to restock log
+                const newLog = {
+                    id: restockLog.length > 0 ? Math.max(...restockLog.map(l => l.id)) + 1 : 1,
+                    designId: designId,
+                    designName: design.name,
+                    sku: design.sku,
+                    size: size,
+                    quantity: quantityAdded,
+                    date: now,
+                    newStock: newValue
+                };
+                
+                restockLog.push(newLog);
+                renderRestockLog();
+                
+                // Update last restock date
+                design.lastRestock = now.split('T')[0];
+            }
+            
+            // Update stock value
+            design.stock[size] = newValue;
+            
+            // Check if stock is below minimum
+            const minStock = design.minStock[size] || 0;
+            if (newValue < minStock) {
+                input.classList.add('border-red-300');
+                input.parentElement.classList.add('low-stock');
+            } else {
+                input.classList.remove('border-red-300');
+                input.parentElement.classList.remove('low-stock');
+            }
+            
+            // Re-render inventory to update totals
+            renderInventory();
+        }
+        
+        // Switch between tabs
+        function switchTab(tab) {
+            inventoryContent.classList.add('hidden');
+            restockContent.classList.add('hidden');
+            reportsContent.classList.add('hidden');
+            
+            inventoryTab.classList.remove('text-blue-600', 'border-blue-600', 'bg-blue-50');
+            restockTab.classList.remove('text-blue-600', 'border-blue-600', 'bg-blue-50');
+            reportsTab.classList.remove('text-blue-600', 'border-blue-600', 'bg-blue-50');
+            
+            inventoryTab.classList.add('text-gray-500');
+            restockTab.classList.add('text-gray-500');
+            reportsTab.classList.add('text-gray-500');
+            
+            if (tab === 'inventory') {
+                inventoryContent.classList.remove('hidden');
+                inventoryTab.classList.remove('text-gray-500');
+                inventoryTab.classList.add('text-blue-600', 'border-blue-600', 'bg-blue-50');
+            } else if (tab === 'restock') {
+                restockContent.classList.remove('hidden');
+                restockTab.classList.remove('text-gray-500');
+                restockTab.classList.add('text-blue-600', 'border-blue-600', 'bg-blue-50');
+            } else if (tab === 'reports') {
+                reportsContent.classList.remove('hidden');
+                reportsTab.classList.remove('text-gray-500');
+                reportsTab.classList.add('text-blue-600', 'border-blue-600', 'bg-blue-50');
+            }
+        }
+        
+        // Show add design modal
+        function showAddDesignModal() {
+            document.getElementById('design-name').value = '';
+            document.getElementById('design-sku').value = '';
+            document.querySelectorAll('.size-input').forEach(input => input.value = '0');
+            document.querySelectorAll('.min-input').forEach(input => input.value = '0');
+            addDesignModal.classList.remove('hidden');
+        }
+        
+        // Add new design
+        function addNewDesign() {
+            const name = document.getElementById('design-name').value.trim();
+            const sku = document.getElementById('design-sku').value.trim();
+            
+            if (!name || !sku) {
+                alert('Please enter both design name and SKU');
+                return;
+            }
+            
+            // Get initial stock values
+            const stock = {};
+            const minStock = {};
+            const sizes = ['xs', 's', 'm', 'l', 'xl', 'xxl', '3xl'];
+            
+            sizes.forEach(size => {
+                const stockInput = document.querySelector(`.size-input[data-size="${size}"]`);
+                const minInput = document.querySelector(`.min-input[data-size="${size}"]`);
+                
+                stock[size] = parseInt(stockInput.value) || 0;
+                minStock[size] = parseInt(minInput.value) || 0;
+            });
+            
+            // Create new design
+            const newId = inventory.length > 0 ? Math.max(...inventory.map(item => item.id)) + 1 : 1;
+            const now = new Date().toISOString().split('T')[0];
+            
+            const newDesign = {
+                id: newId,
+                name: name,
+                sku: sku,
+                stock: stock,
+                minStock: minStock,
+                lastRestock: now
+            };
+            
+            inventory.push(newDesign);
+            addDesignModal.classList.add('hidden');
+            renderInventory();
+        }
+        
+        // Show edit minimum stock modal
+        function showEditMinModal(e) {
+            const designId = parseInt(e.target.dataset.id);
+            const design = inventory.find(item => item.id === designId);
+            
+            document.getElementById('min-design-name').textContent = design.name;
+            
+            // Set current min stock values
+            document.getElementById('min-xs').value = design.minStock.xs || 0;
+            document.getElementById('min-s').value = design.minStock.s || 0;
+            document.getElementById('min-m').value = design.minStock.m || 0;
+            document.getElementById('min-l').value = design.minStock.l || 0;
+            document.getElementById('min-xl').value = design.minStock.xl || 0;
+            document.getElementById('min-xxl').value = design.minStock.xxl || 0;
+            document.getElementById('min-3xl').value = design.minStock['3xl'] || 0;
+            
+            // Store design ID on modal for saving
+            editMinModal.dataset.designId = designId;
+            editMinModal.classList.remove('hidden');
+        }
+        
+        // Save minimum stock levels
+        function saveMinStock() {
+            const designId = parseInt(editMinModal.dataset.designId);
+            const design = inventory.find(item => item.id === designId);
+            
+            // Update min stock values
+            design.minStock.xs = parseInt(document.getElementById('min-xs').value) || 0;
+            design.minStock.s = parseInt(document.getElementById('min-s').value) || 0;
+            design.minStock.m = parseInt(document.getElementById('min-m').value) || 0;
+            design.minStock.l = parseInt(document.getElementById('min-l').value) || 0;
+            design.minStock.xl = parseInt(document.getElementById('min-xl').value) || 0;
+            design.minStock.xxl = parseInt(document.getElementById('min-xxl').value) || 0;
+            design.minStock['3xl'] = parseInt(document.getElementById('min-3xl').value) || 0;
+            
+            editMinModal.classList.add('hidden');
+            renderInventory();
+        }
+        
+        // Delete design
+        function deleteDesign(e) {
+            if (!confirm('Are you sure you want to delete this design?')) {
+                return;
+            }
+            
+            const designId = parseInt(e.target.dataset.id);
+            inventory = inventory.filter(item => item.id !== designId);
+            
+            // Also remove from restock log
+            restockLog = restockLog.filter(log => log.designId !== designId);
+            
+            renderInventory();
+            renderRestockLog();
+        }
+        
+        // Export inventory to CSV
+        function exportInventoryToCSV() {
+            let csv = 'Design Name,SKU,XS,S,M,L,XL,XXL,3XL,Last Restock,Total\n';
+            
+            inventory.forEach(item => {
+                const total = Object.values(item.stock).reduce((sum, qty) => sum + qty, 0);
+                
+                csv += `"${item.name}","${item.sku}",${item.stock.xs},${item.stock.s},${item.stock.m},${item.stock.l},${item.stock.xl},${item.stock.xxl},${item.stock['3xl']},"${item.lastRestock}",${total}\n`;
+            });
+            
+            downloadCSV(csv, 'inventory.csv');
+        }
+        
+        // Export restock log to CSV
+        function exportRestockToCSV() {
+            let csv = 'Date,Design Name,SKU,Size,Quantity Added,New Stock\n';
+            
+            // Sort by date (newest first)
+            const sortedLog = [...restockLog].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            sortedLog.forEach(log => {
+                const date = new Date(log.date);
+                const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+                
+                csv += `"${formattedDate}","${log.designName}","${log.sku}","${log.size.toUpperCase()}",${log.quantity},${log.newStock}\n`;
+            });
+            
+            downloadCSV(csv, 'restock_log.csv');
+        }
+        
+        // Generate monthly report
+        function generateMonthlyReport() {
+            const monthInput = document.getElementById('report-month').value;
+            
+            if (!monthInput) {
+                alert('Please select a month');
+                return;
+            }
+            
+            const [year, month] = monthInput.split('-');
+            const startDate = new Date(year, month - 1, 1);
+            const endDate = new Date(year, month, 0);
+            
+            // Filter restock logs for the selected month
+            const monthlyLogs = restockLog.filter(log => {
+                const logDate = new Date(log.date);
+                return logDate >= startDate && logDate <= endDate;
+            });
+            
+            if (monthlyLogs.length === 0) {
+                reportResults.classList.add('hidden');
+                alert('No restock data found for the selected month');
+                return;
+            }
+            
+            // Group by design and size
+            const reportData = {};
+            
+            monthlyLogs.forEach(log => {
+                const key = `${log.designName}|${log.sku}|${log.size}`;
+                
+                if (!reportData[key]) {
+                    reportData[key] = {
+                        designName: log.designName,
+                        sku: log.sku,
+                        size: log.size.toUpperCase(),
+                        quantity: 0
+                    };
+                }
+                
+                reportData[key].quantity += log.quantity;
+            });
+            
+            // Convert to array and sort by design name
+            const sortedData = Object.values(reportData).sort((a, b) => a.designName.localeCompare(b.designName));
+            
+            // Render report
+            reportTitle.textContent = `Monthly Restock Report - ${startDate.toLocaleDateString('default', { month: 'long', year: 'numeric' })}`;
+            reportHeaders.innerHTML = `
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Design</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity Restocked</th>
+            `;
+            
+            reportBody.innerHTML = '';
+            sortedData.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-900">${item.designName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-500">${item.sku}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-500">${item.size}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-green-600 font-medium">${item.quantity}</td>
+                `;
+                reportBody.appendChild(row);
+            });
+            
+            reportResults.classList.remove('hidden');
+        }
+        
+        // Generate custom date range report
+        function generateCustomReport() {
+            const startDateInput = document.getElementById('report-start').value;
+            const endDateInput = document.getElementById('report-end').value;
+            
+            if (!startDateInput || !endDateInput) {
+                alert('Please select both start and end dates');
+                return;
+            }
+            
+            const startDate = new Date(startDateInput);
+            const endDate = new Date(endDateInput);
+            
+            if (startDate > endDate) {
+                alert('Start date must be before end date');
+                return;
+            }
+            
+            // Filter restock logs for the selected date range
+            const rangeLogs = restockLog.filter(log => {
+                const logDate = new Date(log.date);
+                return logDate >= startDate && logDate <= endDate;
+            });
+            
+            if (rangeLogs.length === 0) {
+                reportResults.classList.add('hidden');
+                alert('No restock data found for the selected date range');
+                return;
+            }
+            
+            // Group by date, design and size
+            const reportData = {};
+            
+            rangeLogs.forEach(log => {
+                const logDate = new Date(log.date).toLocaleDateString();
+                const key = `${logDate}|${log.designName}|${log.sku}|${log.size}`;
+                
+                if (!reportData[key]) {
+                    reportData[key] = {
+                        date: logDate,
+                        designName: log.designName,
+                        sku: log.sku,
+                        size: log.size.toUpperCase(),
+                        quantity: 0
+                    };
+                }
+                
+                reportData[key].quantity += log.quantity;
+            });
+            
+            // Convert to array and sort by date
+            const sortedData = Object.values(reportData).sort((a, b) => {
+                return new Date(a.date.split(',')[0]) - new Date(b.date.split(',')[0]);
+            });
+            
+            // Render report
+            reportTitle.textContent = `Custom Restock Report - ${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`;
+            reportHeaders.innerHTML = `
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Design</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity Restocked</th>
+            `;
+            
+            reportBody.innerHTML = '';
+            sortedData.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-500">${item.date}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-900">${item.designName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-500">${item.sku}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-gray-500">${item.size}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-green-600 font-medium">${item.quantity}</td>
+                `;
+                reportBody.appendChild(row);
+            });
+            
+            reportResults.classList.remove('hidden');
+        }
+        
+        // Export report to CSV
+        function exportReportToCSV() {
+            const title = reportTitle.textContent;
+            const headers = Array.from(reportHeaders.querySelectorAll('th')).map(th => th.textContent).join(',');
+            
+            let csv = `${title}\n${headers}\n`;
+            
+            Array.from(reportBody.querySelectorAll('tr')).forEach(row => {
+                const cells = Array.from(row.querySelectorAll('td')).map(td => {
+                    // Handle numeric values without quotes
+                    if (!isNaN(td.textContent) && td.textContent.trim() !== '') {
+                        return td.textContent;
+                    }
+                    // Handle text with possible commas
+                    return `"${td.textContent}"`;
+                }).join(',');
+                
+                csv += `${cells}\n`;
+            });
+            
+            downloadCSV(csv, `${title.replace(/ /g, '_')}.csv`);
+        }
+        
+        // Print inventory
+        function printInventory() {
+            // Add print header
+            const printHeader = document.createElement('div');
+            printHeader.className = 'print-only mb-4';
+            printHeader.innerHTML = `
+                <h2 class="text-xl font-bold text-gray-800">T-Shirt Inventory</h2>
+                <p class="text-sm text-gray-600">Printed on ${new Date().toLocaleDateString()}</p>
+            `;
+            
+            document.body.insertBefore(printHeader, document.body.firstChild);
+            
+            window.print();
+            
+            // Remove print header after printing
+            if (printHeader.parentNode) {
+                printHeader.parentNode.removeChild(printHeader);
+            }
+        }
+        
+        // Helper function to download CSV
+        function downloadCSV(csv, filename) {
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
